@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFrameworks>net48</TargetFrameworks>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <AssemblyTitle>SSLCertificateMaker</AssemblyTitle>
         <Product>SSLCertificateMaker</Product>
-        <Copyright>Copyright ©  2023</Copyright>
-        <AssemblyVersion>2.2.1.0</AssemblyVersion>
-        <FileVersion>2.2.1.0</FileVersion>
+        <Copyright>Copyright © 2026</Copyright>
+		<AssemblyVersion>3.0.0.0</AssemblyVersion>
+        <FileVersion>3.0.0.0</FileVersion>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <ApplicationIcon>cert.ico</ApplicationIcon>
         <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugType>embedded</DebugType>
@@ -21,10 +22,10 @@
         <DebugType>embedded</DebugType>
     </PropertyGroup>
     <ItemGroup>
-      <Content Include="cert.ico" />
+        <Content Include="cert.ico" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.1" />
+        <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
         <PackageReference Include="Costura.Fody" Version="6.0.0">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
@@ -39,7 +40,7 @@
         <Reference Include="System.Deployment" />
         <Reference Include="System.Net.Http" />
         <Reference Include="System.Windows.Forms" />
-        <PackageReference Include="System.Resources.Extensions" Version="10.0.0" />
+        <PackageReference Include="System.Resources.Extensions" Version="10.0.3" />
     </ItemGroup>
     <ItemGroup>
         <Compile Update="ConvertCerts.cs">
@@ -113,13 +114,11 @@
             <Generator>SettingsSingleFileGenerator</Generator>
             <LastGenOutput>Settings.Designer.cs</LastGenOutput>
         </None>
+        <ProjectReference Include="..\SSLCertificateMaker.Library\SSLCertificateMaker.Library.csproj" />
         <Compile Update="Properties\Settings.Designer.cs">
             <AutoGen>True</AutoGen>
             <DependentUpon>Settings.settings</DependentUpon>
             <DesignTimeSharedInput>True</DesignTimeSharedInput>
         </Compile>
-    </ItemGroup>
-    <ItemGroup>
-        <None Include="FodyWeavers.xml" />
     </ItemGroup>
 </Project>
