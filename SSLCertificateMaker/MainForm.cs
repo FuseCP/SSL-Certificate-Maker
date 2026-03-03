@@ -326,17 +326,17 @@ namespace SSLCertificateMaker
 		private static MultiSelectListItem<KeyPurposeID>[] ExtendedKeyUsageOptions = new MultiSelectListItem<KeyPurposeID>[]
 		{
 			new MultiSelectListItem<KeyPurposeID>("Any Extended Key Usage", KeyPurposeID.AnyExtendedKeyUsage),
-			new MultiSelectListItem<KeyPurposeID>("Client Auth", KeyPurposeID.IdKPClientAuth),
-			new MultiSelectListItem<KeyPurposeID>("Code Signing", KeyPurposeID.IdKPCodeSigning),
-			new MultiSelectListItem<KeyPurposeID>("Email Protection", KeyPurposeID.IdKPEmailProtection),
-			new MultiSelectListItem<KeyPurposeID>("Ipsec End System", KeyPurposeID.IdKPIpsecEndSystem),
-			new MultiSelectListItem<KeyPurposeID>("Ipsec Tunnel", KeyPurposeID.IdKPIpsecTunnel),
-			new MultiSelectListItem<KeyPurposeID>("Ipsec User", KeyPurposeID.IdKPIpsecUser),
-			new MultiSelectListItem<KeyPurposeID>("Mac Address", KeyPurposeID.IdKPMacAddress),
-			new MultiSelectListItem<KeyPurposeID>("Ocsp Signing", KeyPurposeID.IdKPOcspSigning),
-			new MultiSelectListItem<KeyPurposeID>("Server Auth", KeyPurposeID.IdKPServerAuth),
-			new MultiSelectListItem<KeyPurposeID>("Smart Card Logon", KeyPurposeID.IdKPSmartCardLogon),
-			new MultiSelectListItem<KeyPurposeID>("Time Stamping", KeyPurposeID.IdKPTimeStamping)
+			new MultiSelectListItem<KeyPurposeID>("Client Auth", KeyPurposeID.id_kp_clientAuth),
+			new MultiSelectListItem<KeyPurposeID>("Code Signing", KeyPurposeID.id_kp_codeSigning),
+			new MultiSelectListItem<KeyPurposeID>("Email Protection", KeyPurposeID.id_kp_emailProtection),
+			new MultiSelectListItem<KeyPurposeID>("Ipsec End System", KeyPurposeID.id_kp_ipsecEndSystem),
+			new MultiSelectListItem<KeyPurposeID>("Ipsec Tunnel", KeyPurposeID.id_kp_ipsecTunnel),
+			new MultiSelectListItem<KeyPurposeID>("Ipsec User", KeyPurposeID.id_kp_ipsecUser),
+			new MultiSelectListItem<KeyPurposeID>("Mac Address", KeyPurposeID.id_kp_macAddress),
+			new MultiSelectListItem<KeyPurposeID>("Ocsp Signing", KeyPurposeID.id_kp_OCSPSigning),
+			new MultiSelectListItem<KeyPurposeID>("Server Auth", KeyPurposeID.id_kp_serverAuth),
+			new MultiSelectListItem<KeyPurposeID>("Smart Card Logon", KeyPurposeID.id_kp_smartcardlogon),
+			new MultiSelectListItem<KeyPurposeID>("Time Stamping", KeyPurposeID.id_kp_timeStamping)
 		};
 		#endregion
 

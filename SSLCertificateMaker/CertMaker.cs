@@ -86,13 +86,13 @@ namespace SSLCertificateMaker
 
 			if (issuerPublic != null)
 			{
-				AuthorityKeyIdentifierStructure akis = new AuthorityKeyIdentifierStructure(issuerPublic);
-				certGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, akis);
+				var authorityKeyIdentifier = X509ExtensionUtilities.CreateAuthorityKeyIdentifier(issuerPublic);
+				certGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, authorityKeyIdentifier);
 			}
 
 			// Subject Key Identifier
-			SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(subjectPublic);
-			certGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false, skis);
+			var subjectKeyIdentifier = X509ExtensionUtilities.CreateSubjectKeyIdentifier(subjectPublic);
+			certGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false, subjectKeyIdentifier);
 
 			if (!isCA || args.domains.Length > 1)
 			{
