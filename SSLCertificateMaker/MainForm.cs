@@ -22,6 +22,7 @@ namespace SSLCertificateMaker
 	public partial class MainForm : Form
 	{
 		private Thread worker;
+		private volatile bool cancelRequested;
 
 		private const string c_SelfSigned = "None (Self-Signed)";
 		private const string c_make = "Make Certificate";
@@ -115,6 +116,7 @@ namespace SSLCertificateMaker
 					return;
 				}
 				btnMakeCert.Text = c_cancel;
+				cancelRequested = false;
 
 				StartProgress();
 				SetStatus("Initializing background thread");
@@ -127,8 +129,15 @@ namespace SSLCertificateMaker
 			else
 			{
 				btnMakeCert.Enabled = false;
-				worker.Abort();
+				cancelRequested = true;
+				SetStatus("Cancellation requested");
 			}
+		}
+
+		private void ThrowIfCancellationRequested()
+		{
+			if (cancelRequested)
+				throw new OperationCanceledException();
 		}
 
 		private bool LooksLikeCA(MakeCertArgs args)
@@ -149,6 +158,7 @@ namespace SSLCertificateMaker
 		{
 			try
 			{
+				ThrowIfCancellationRequested();
 				Directory.CreateDirectory(CA_DIR);
 				Directory.CreateDirectory(CERT_DIR);
 
@@ -180,6 +190,7 @@ namespace SSLCertificateMaker
 					}
 				}
 
+				ThrowIfCancellationRequested();
 				SetStatus("Generating certificate");
 
 				CertificateBundle certBundle;
@@ -217,6 +228,7 @@ namespace SSLCertificateMaker
 					certBundle = CertMaker.GetCertificateSignedByCA(args, issuerBundle);
 				}
 
+				ThrowIfCancellationRequested();
 				SetStatus("Saving certificate to disk");
 
 				if (args.saveCerAndKey)
@@ -233,7 +245,7 @@ namespace SSLCertificateMaker
 
 				SetStatus("");
 			}
-			catch (ThreadAbortException)
+			catch (OperationCanceledException)
 			{
 				SetStatus("Aborted");
 			}
@@ -244,6 +256,8 @@ namespace SSLCertificateMaker
 			}
 			finally
 			{
+				worker = null;
+				cancelRequested = false;
 				StopProgress();
 			}
 		}
