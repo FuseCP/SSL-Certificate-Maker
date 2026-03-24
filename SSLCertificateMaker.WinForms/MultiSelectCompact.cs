@@ -25,7 +25,6 @@ namespace SSLCertificateMaker
 		/// <summary>
 		/// Gets or sets the array of items available for selection.  When setting the array, all current selections will be cleared.
 		/// </summary>
-		[Browsable(false)]
 		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
 		public object[] Items
 		{
@@ -61,7 +60,6 @@ namespace SSLCertificateMaker
 		/// <summary>
 		/// Gets or sets an array indicating which indices are selected. Setting a null value will actually cause a new array of appropriate length to be set instead.
 		/// </summary>
-		[Browsable(false)]
 		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
 		public bool[] SelectedIndices
 		{

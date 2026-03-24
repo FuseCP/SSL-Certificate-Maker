@@ -82,6 +82,10 @@ namespace SSLCertificateMaker
 						break;
 					}
 			}
+			else
+			{
+				cbIssuerSelect.SelectedIndex = cbIssuerSelect.Items.Count > 1 ? 1 : 0;
+			}
 		}
 
 		private void btnMakeCert_Click(object sender, EventArgs e)
@@ -95,8 +99,8 @@ namespace SSLCertificateMaker
 													 txtCertPassword.Text,
 													 (string)ddlOutputType.SelectedItem == ".cer, .key",
 													 cbIssuerSelect.SelectedItem.ToString(),
-													 msKeyUsage.SelectedItems.Cast<MultiSelectListItem<int>>().Select(i => i.Value).Sum(),
-													 msExtendedKeyUsage.SelectedItems.Cast<MultiSelectListItem<KeyPurposeID>>().Select(i => i.Value).ToArray()
+													 msKeyUsage.SelectedItems.Cast<MultiSelectIntItem>().Select(i => i.Value).Sum(),
+													 msExtendedKeyUsage.SelectedItems.Cast<MultiSelectKeyPurposeItem>().Select(i => i.Value).ToArray()
 													 );
 				args.OutputPath = CERT_DIR;
 				if (LooksLikeCA(args))
@@ -322,35 +326,35 @@ namespace SSLCertificateMaker
 		}
 
 		#region Key Usage
-		private static MultiSelectListItem<int>[] KeyUsageOptions = new MultiSelectListItem<int>[]
+		private static MultiSelectIntItem[] KeyUsageOptions = new MultiSelectIntItem[]
 		{
-			new MultiSelectListItem<int>("EncipherOnly (1)", KeyUsage.EncipherOnly),
-			new MultiSelectListItem<int>("CRL Signing (2)", KeyUsage.CrlSign),
-			new MultiSelectListItem<int>("Certificate Signing (4)", KeyUsage.KeyCertSign),
-			new MultiSelectListItem<int>("KeyAgreement (8)", KeyUsage.KeyAgreement),
-			new MultiSelectListItem<int>("DataEncipherment (16)", KeyUsage.DataEncipherment),
-			new MultiSelectListItem<int>("KeyEncipherment (32)", KeyUsage.KeyEncipherment),
-			new MultiSelectListItem<int>("NonRepudiation (64)", KeyUsage.NonRepudiation),
-			new MultiSelectListItem<int>("DigitalSignature (128)", KeyUsage.DigitalSignature),
-			new MultiSelectListItem<int>("DecipherOnly (32768)", KeyUsage.DecipherOnly)
+			new MultiSelectIntItem("EncipherOnly (1)", KeyUsage.EncipherOnly),
+			new MultiSelectIntItem("CRL Signing (2)", KeyUsage.CrlSign),
+			new MultiSelectIntItem("Certificate Signing (4)", KeyUsage.KeyCertSign),
+			new MultiSelectIntItem("KeyAgreement (8)", KeyUsage.KeyAgreement),
+			new MultiSelectIntItem("DataEncipherment (16)", KeyUsage.DataEncipherment),
+			new MultiSelectIntItem("KeyEncipherment (32)", KeyUsage.KeyEncipherment),
+			new MultiSelectIntItem("NonRepudiation (64)", KeyUsage.NonRepudiation),
+			new MultiSelectIntItem("DigitalSignature (128)", KeyUsage.DigitalSignature),
+			new MultiSelectIntItem("DecipherOnly (32768)", KeyUsage.DecipherOnly)
 		};
 		#endregion
 
 		#region Extended Key Usage
-		private static MultiSelectListItem<KeyPurposeID>[] ExtendedKeyUsageOptions = new MultiSelectListItem<KeyPurposeID>[]
+		private static MultiSelectKeyPurposeItem[] ExtendedKeyUsageOptions = new MultiSelectKeyPurposeItem[]
 		{
-			new MultiSelectListItem<KeyPurposeID>("Any Extended Key Usage", KeyPurposeID.AnyExtendedKeyUsage),
-				new MultiSelectListItem<KeyPurposeID>("Client Auth", KeyPurposeID.id_kp_clientAuth),
-				new MultiSelectListItem<KeyPurposeID>("Code Signing", KeyPurposeID.id_kp_codeSigning),
-				new MultiSelectListItem<KeyPurposeID>("Email Protection", KeyPurposeID.id_kp_emailProtection),
-				new MultiSelectListItem<KeyPurposeID>("Ipsec End System", KeyPurposeID.id_kp_ipsecEndSystem),
-				new MultiSelectListItem<KeyPurposeID>("Ipsec Tunnel", KeyPurposeID.id_kp_ipsecTunnel),
-				new MultiSelectListItem<KeyPurposeID>("Ipsec User", KeyPurposeID.id_kp_ipsecUser),
-				new MultiSelectListItem<KeyPurposeID>("Mac Address", KeyPurposeID.id_kp_macAddress),
-				new MultiSelectListItem<KeyPurposeID>("Ocsp Signing", KeyPurposeID.id_kp_OCSPSigning),
-				new MultiSelectListItem<KeyPurposeID>("Server Auth", KeyPurposeID.id_kp_serverAuth),
-				new MultiSelectListItem<KeyPurposeID>("Smart Card Logon", KeyPurposeID.id_kp_smartcardlogon),
-				new MultiSelectListItem<KeyPurposeID>("Time Stamping", KeyPurposeID.id_kp_timeStamping)
+			new MultiSelectKeyPurposeItem("Any Extended Key Usage", KeyPurposeID.AnyExtendedKeyUsage),
+			new MultiSelectKeyPurposeItem("Client Auth", KeyPurposeID.id_kp_clientAuth),
+			new MultiSelectKeyPurposeItem("Code Signing", KeyPurposeID.id_kp_codeSigning),
+			new MultiSelectKeyPurposeItem("Email Protection", KeyPurposeID.id_kp_emailProtection),
+			new MultiSelectKeyPurposeItem("Ipsec End System", KeyPurposeID.id_kp_ipsecEndSystem),
+			new MultiSelectKeyPurposeItem("Ipsec Tunnel", KeyPurposeID.id_kp_ipsecTunnel),
+			new MultiSelectKeyPurposeItem("Ipsec User", KeyPurposeID.id_kp_ipsecUser),
+			new MultiSelectKeyPurposeItem("Mac Address", KeyPurposeID.id_kp_macAddress),
+			new MultiSelectKeyPurposeItem("Ocsp Signing", KeyPurposeID.id_kp_OCSPSigning),
+			new MultiSelectKeyPurposeItem("Server Auth", KeyPurposeID.id_kp_serverAuth),
+			new MultiSelectKeyPurposeItem("Smart Card Logon", KeyPurposeID.id_kp_smartcardlogon),
+			new MultiSelectKeyPurposeItem("Time Stamping", KeyPurposeID.id_kp_timeStamping)
 		};
 		#endregion
 
