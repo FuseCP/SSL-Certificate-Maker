@@ -57,11 +57,11 @@ namespace SSLCertificateMaker
 				return selected.ToArray();
 			}
 		}
-        /// <summary>
-        /// Gets or sets an array indicating which indices are selected. Setting a null value will actually cause a new array of appropriate length to be set instead.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool[] SelectedIndices
+		/// <summary>
+		/// Gets or sets an array indicating which indices are selected. Setting a null value will actually cause a new array of appropriate length to be set instead.
+		/// </summary>
+		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+		public bool[] SelectedIndices
 		{
 			get
 			{
