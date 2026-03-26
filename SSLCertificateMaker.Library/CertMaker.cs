@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Org.BouncyCastle.Asn1;
@@ -37,6 +38,15 @@ namespace SSLCertificateMaker
 			RsaKeyPairGenerator keyGenerator = new RsaKeyPairGenerator();
 			keyGenerator.Init(keygenParam);
 			return keyGenerator.GenerateKeyPair();
+		}
+
+		private static byte[] CreateKeyIdentifier(AsymmetricKeyParameter publicKey)
+		{
+			var subjectPublicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKey);
+			using (var sha1 = SHA1.Create())
+			{
+				return sha1.ComputeHash(subjectPublicKeyInfo.PublicKey.GetBytes());
+			}
 		}
 
 		private static AsymmetricCipherKeyPair GenerateEcKeyPair(string curveName)
@@ -87,13 +97,13 @@ namespace SSLCertificateMaker
 
 			if (issuerPublic != null)
 			{
-						AuthorityKeyIdentifierStructure akis = new AuthorityKeyIdentifierStructure(issuerPublic);
-						certGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, akis);
+				var authorityKeyIdentifier = new AuthorityKeyIdentifier(CreateKeyIdentifier(issuerPublic));
+				certGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, authorityKeyIdentifier);
 			}
 
 			// Subject Key Identifier
-					SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(subjectPublic);
-					certGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false, skis);
+			var subjectKeyIdentifier = new SubjectKeyIdentifier(CreateKeyIdentifier(subjectPublic));
+			certGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false, subjectKeyIdentifier);
 
 			if (!isCA || args.domains.Length > 1)
 			{

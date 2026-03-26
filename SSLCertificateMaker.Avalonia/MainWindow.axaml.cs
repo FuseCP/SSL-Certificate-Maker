@@ -3,12 +3,14 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using AvaloniaDialogs.Views;
 using Org.BouncyCastle.Asn1.X509;
 using SSLCertificateMaker;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,7 +80,10 @@ namespace SSLCertificateMaker.Avalonia
         private void InitializeUi()
         {
             var version = typeof(MainWindow).Assembly.GetName().Version;
-            Title += $" {version.Major}.{version.Minor}";
+            if (version != null)
+            {
+                Title += $" {version.Major}.{version.Minor}";
+            }
 
             // Dates
             ValidFromDatePicker.SelectedDate = DateTime.Today.AddYears(-10);
@@ -133,103 +138,32 @@ namespace SSLCertificateMaker.Avalonia
                     ConvertButton.Content = "Convert to .pfx";
                 }
             };
-            tabControl.SelectionChanged += (_, _) => SetStatus("");
+            tabControl.SelectionChanged += async (_, _) => await SetStatus(string.Empty);
 
-            IssuerCombo.SelectionChanged += (_, _) =>
-            {
-                var item = IssuerCombo.SelectedItem as string;
-                if (item == OpenFile)
-                {
-                    var ofd = new OpenFileDialog
-                    {
-                        Title = "Select CA Certificate",
-                        Directory = CertDirectory,
-                        Filters = new List<FileDialogFilter>
-                        {
-                            new FileDialogFilter { Name = "Certificate Files", Extensions = new List<string> { "pfx", "key", "cer" } },
-                            new FileDialogFilter { Name = "All Files", Extensions = new List<string> { "*" } }
-                        }
-                    };
-                    var result = ofd.ShowAsync(this);
-                    result.ContinueWith(t =>
-                    {
-                        var files = t.Result;
-                        if (files != null && files.Length > 0)
-                        {
-                            var selectedFile = Path.GetFileName(files[0]);
-                            var capath = Path.GetFullPath(CaDirectory);
-                            var ext = Path.GetExtension(selectedFile);
-                            if (ext.Equals(".pfx", StringComparison.OrdinalIgnoreCase))
-                            {
-                                File.Copy(files[0], Path.Combine(capath, selectedFile), true);
-                                Dispatcher.UIThread.InvokeAsync(() =>
-                                {
-                                    IssuerCombo.SelectedItem = null;
-                                    PopulateIssuerDropdown();
-                                    IssuerCombo.SelectedItem = selectedFile;
-                                });
-                            }
-                            else if (ext.Equals(".key", StringComparison.OrdinalIgnoreCase))
-                            {
-                                var cerfile = Path.ChangeExtension(files[0], ".cer");
-                                if (!File.Exists(cerfile)) ShowError("Missing *.cer File", "The selected .key file does not have a corresponding .cer file in the same location. Please ensure both .key and .cer files are present.");
-                                else
-                                {
-                                    File.Copy(files[0], Path.Combine(capath, selectedFile), true);
-                                    File.Copy(cerfile, Path.Combine(capath, Path.ChangeExtension(selectedFile, ".cer")), true);
-                                    Dispatcher.UIThread.InvokeAsync(() =>
-                                    {
-                                        IssuerCombo.SelectedItem = null;
-                                        PopulateIssuerDropdown();
-                                        IssuerCombo.SelectedItem = selectedFile;
-                                    });
-                                }
-                            }
-                            else if (ext.Equals(".cer", StringComparison.OrdinalIgnoreCase))
-                            {
-                                var keyfile = Path.ChangeExtension(files[0], ".cer");
-                                if (!File.Exists(keyfile)) ShowError("Missing *.key File", "The selected .cer file does not have a corresponding .key file in the same location. Please ensure both .key and .cer files are present.");
-                                else
-                                {
-                                    File.Copy(files[0], Path.Combine(capath, selectedFile), true);
-                                    File.Copy(keyfile, Path.Combine(capath, Path.ChangeExtension(selectedFile, ".key")), true);
-                                    Dispatcher.UIThread.InvokeAsync(() =>
-                                    {
-                                        IssuerCombo.SelectedItem = null;
-                                        PopulateIssuerDropdown();
-                                        IssuerCombo.SelectedItem = selectedFile;
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            };
+            IssuerCombo.SelectionChanged += async (_, _) => await HandleIssuerSelectionAsync();
             StatusTextBlock.Text = string.Empty;
             StopProgress();
 
             ApplyWebServerPreset();
             PopulateIssuerDropdown();
 
-            Application.Current!.PropertyChanged += SetTheme;
+            Application.Current!.PropertyChanged += OnApplicationPropertyChanged;
             SetTheme();
         }
 
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            Application.Current!.PropertyChanged -= SetTheme;
+            Application.Current!.PropertyChanged -= OnApplicationPropertyChanged;
         }
-        private void KeyUsageSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void KeyUsageSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (sender == KeyUsageListBox)
             {
-                txtKeyUsage.Text = string.Join(", ", KeyUsageListBox.SelectedItems
-                    .OfType<MultiSelectIntItem>()
+                txtKeyUsage.Text = string.Join(", ", SelectedItemsOfType<MultiSelectIntItem>(KeyUsageListBox.SelectedItems)
                     .Select(item => item.Key));
             }
-            else txtExtendedKeyUsage.Text = string.Join(", ", ExtendedKeyUsageListBox.SelectedItems
-                .OfType<MultiSelectKeyPurposeItem>()
+            else txtExtendedKeyUsage.Text = string.Join(", ", SelectedItemsOfType<MultiSelectKeyPurposeItem>(ExtendedKeyUsageListBox.SelectedItems)
                 .Select(item => item.Key));
         }
         private void OutputTypeComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -237,20 +171,24 @@ namespace SSLCertificateMaker.Avalonia
             UpdatePasswordEnabled();
         }
 
-        private void SetTheme(object sender = null, AvaloniaPropertyChangedEventArgs e = null)
+        private void OnApplicationPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e == null || e.Property.Name == nameof(Application.ActualThemeVariant))
+            if (e.Property.Name == nameof(Application.ActualThemeVariant))
             {
+                SetTheme();
+            }
+        }
 
-                var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
-                if (isDark)
-                {
-                    PenImage1.Source = PenImage2.Source = new Bitmap(AssetLoader.Open(new Uri("avares://SSLCertificateMaker.Avalonia/pen-white.png")));
-                }
-                else
-                {
-                    PenImage1.Source = PenImage2.Source = new Bitmap(AssetLoader.Open(new Uri("avares://SSLCertificateMaker.Avalonia/pen.png")));
-                }
+        private void SetTheme()
+        {
+            var isDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+            if (isDark)
+            {
+                PenImage1.Source = PenImage2.Source = new Bitmap(AssetLoader.Open(new Uri("avares://SSLCertificateMaker.Avalonia/pen-white.png")));
+            }
+            else
+            {
+                PenImage1.Source = PenImage2.Source = new Bitmap(AssetLoader.Open(new Uri("avares://SSLCertificateMaker.Avalonia/pen.png")));
             }
         }
         private void UpdatePasswordEnabled()
@@ -317,6 +255,109 @@ namespace SSLCertificateMaker.Avalonia
             }
         }
 
+        private static IEnumerable<T> SelectedItemsOfType<T>(IEnumerable? items)
+        {
+            return items?.OfType<T>() ?? Enumerable.Empty<T>();
+        }
+
+        private async Task HandleIssuerSelectionAsync()
+        {
+            var item = IssuerCombo.SelectedItem as string;
+            if (item != OpenFile)
+                return;
+
+            var selectedPath = await PickOpenPathAsync();
+            if (string.IsNullOrEmpty(selectedPath))
+                return;
+
+            var selectedFile = Path.GetFileName(selectedPath);
+            var caPath = Path.GetFullPath(CaDirectory);
+            var ext = Path.GetExtension(selectedFile);
+
+            if (ext.Equals(".pfx", StringComparison.OrdinalIgnoreCase))
+            {
+                File.Copy(selectedPath, Path.Combine(caPath, selectedFile), true);
+                RefreshIssuerSelection(selectedFile);
+                return;
+            }
+
+            if (ext.Equals(".key", StringComparison.OrdinalIgnoreCase))
+            {
+                var cerFile = Path.ChangeExtension(selectedPath, ".cer");
+                if (!File.Exists(cerFile))
+                {
+                    await ShowError("Missing *.cer File", "The selected .key file does not have a corresponding .cer file in the same location. Please ensure both .key and .cer files are present.");
+                    return;
+                }
+
+                File.Copy(selectedPath, Path.Combine(caPath, selectedFile), true);
+                File.Copy(cerFile, Path.Combine(caPath, Path.ChangeExtension(selectedFile, ".cer")), true);
+                RefreshIssuerSelection(selectedFile);
+                return;
+            }
+
+            if (ext.Equals(".cer", StringComparison.OrdinalIgnoreCase))
+            {
+                var keyFile = Path.ChangeExtension(selectedPath, ".key");
+                if (!File.Exists(keyFile))
+                {
+                    await ShowError("Missing *.key File", "The selected .cer file does not have a corresponding .key file in the same location. Please ensure both .key and .cer files are present.");
+                    return;
+                }
+
+                File.Copy(selectedPath, Path.Combine(caPath, selectedFile), true);
+                File.Copy(keyFile, Path.Combine(caPath, Path.ChangeExtension(selectedFile, ".key")), true);
+                RefreshIssuerSelection(selectedFile);
+            }
+        }
+
+        private void RefreshIssuerSelection(string selectedFile)
+        {
+            IssuerCombo.SelectedItem = null;
+            PopulateIssuerDropdown();
+            IssuerCombo.SelectedItem = selectedFile;
+        }
+
+        private async Task<string?> PickOpenPathAsync()
+        {
+            var startLocation = await StorageProvider.TryGetFolderFromPathAsync(CertDirectory);
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select CA Certificate",
+                AllowMultiple = false,
+                SuggestedStartLocation = startLocation,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Certificate Files") { Patterns = new[] { "*.pfx", "*.key", "*.cer" } },
+                    FilePickerFileTypes.All
+                }
+            });
+
+            return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        }
+
+        private async Task<string?> PickSavePathAsync(bool saveCerAndKey, string suggestedFileName)
+        {
+            var startLocation = await StorageProvider.TryGetFolderFromPathAsync(CertDirectory);
+            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Save Certificate",
+                SuggestedStartLocation = startLocation,
+                SuggestedFileName = suggestedFileName,
+                DefaultExtension = saveCerAndKey ? "cer" : "pfx",
+                ShowOverwritePrompt = true,
+                FileTypeChoices = new[]
+                {
+                    saveCerAndKey
+                        ? new FilePickerFileType("Certificate Files") { Patterns = new[] { "*.cer", "*.key" } }
+                        : new FilePickerFileType("Certificate Files") { Patterns = new[] { "*.pfx" } },
+                    FilePickerFileTypes.All
+                }
+            });
+
+            return file?.TryGetLocalPath();
+        }
+
 
         private async void MakeCertButton_OnClick(object? sender, RoutedEventArgs e)
         {
@@ -342,13 +383,11 @@ namespace SSLCertificateMaker.Avalonia
                 var outputType = OutputTypeComboBox.SelectedItem as string ?? ".pfx";
                 var issuer = IssuerCombo.SelectedItem as string ?? SelfSignedLabel;
 
-                var keyUsage = KeyUsageListBox.SelectedItems
-                    .OfType<MultiSelectIntItem>()
+                var keyUsage = SelectedItemsOfType<MultiSelectIntItem>(KeyUsageListBox.SelectedItems)
                     .Select(i => i.Value)
                     .Aggregate(0, (acc, v) => acc | v);
 
-                var extendedKeyUsage = ExtendedKeyUsageListBox.SelectedItems
-                    .OfType<MultiSelectKeyPurposeItem>()
+                var extendedKeyUsage = SelectedItemsOfType<MultiSelectKeyPurposeItem>(ExtendedKeyUsageListBox.SelectedItems)
                     .Select(i => i.Value)
                     .ToArray();
 
@@ -392,10 +431,9 @@ namespace SSLCertificateMaker.Avalonia
                         //await SetStatus(string.Empty);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await SetStatus("An error occurred while generating the certificate.");
-                    // Optionally log ex.ToString() somewhere
                 }
                 finally
                 {
@@ -419,7 +457,7 @@ namespace SSLCertificateMaker.Avalonia
             item = Regex.Replace(item, @" & \.cer$", "");
             var extension = Path.GetExtension(item);
             var sourcePath = Path.Combine(CertDirectory, item);
-            CertificateBundle bundle = null;
+            CertificateBundle? bundle = null;
 
             StartProgress();
             await SetStatus($"Converting {item}…");
@@ -457,7 +495,14 @@ namespace SSLCertificateMaker.Avalonia
                     }
 
                     // write .cer & .key
-                    var fullNameWithoutExtension = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
+                    var sourceDirectory = Path.GetDirectoryName(sourcePath);
+                    if (string.IsNullOrEmpty(sourceDirectory))
+                    {
+                        await SetStatus("Unable to determine the source directory.");
+                        return;
+                    }
+
+                    var fullNameWithoutExtension = Path.Combine(sourceDirectory, Path.GetFileNameWithoutExtension(sourcePath));
                     string fileNameCer = fullNameWithoutExtension + ".cer";
                     if (File.Exists(fileNameCer))
                     {
@@ -484,7 +529,7 @@ namespace SSLCertificateMaker.Avalonia
                     {
                         if (!await Confirm("Overwrite existing file?", "Output file \"" + pfxFileName + "\" already exists.  Overwrite?")) return;
                     }
-                    File.WriteAllBytes(pfxFileName, bundle.GetPfx(null));
+                    File.WriteAllBytes(pfxFileName, bundle!.GetPfx(null));
 
                     await SetStatus($"Converted to {Path.GetFileName(pfxFileName)}.");
                 }
@@ -550,33 +595,18 @@ namespace SSLCertificateMaker.Avalonia
 
             var safeFileName = Path.Combine(args.OutputPath, SafeFileName(args.domains[0]));
 
-            var ofd = new SaveFileDialog
+            var result = await PickSavePathAsync(args.saveCerAndKey, Path.GetFileName(safeFileName + (args.saveCerAndKey ? ".cer" : ".pfx")));
+            if (string.IsNullOrEmpty(result))
+                return;
+
+            var resultDirectory = Path.GetDirectoryName(result);
+            if (string.IsNullOrEmpty(resultDirectory))
             {
-                Title = "Save Certificate",
-                Directory = CertDirectory
-            };
-            if (args.saveCerAndKey)
-            {
-                ofd.InitialFileName = Path.GetFileName(safeFileName + ".cer");
-                ofd.Filters = new List<FileDialogFilter>
-                {
-                    new FileDialogFilter { Name = "Certificate Files", Extensions = new List<string> { "key", "cer" } },
-                    new FileDialogFilter { Name = "All Files", Extensions = new List<string> { "*" } }
-                };
+                await SetStatus("Unable to determine the output directory.");
+                return;
             }
-            else
-            {
-                ofd.InitialFileName = Path.GetFileName(safeFileName + ".pfx");
-                ofd.Filters = new List<FileDialogFilter>
-                {
-                    new FileDialogFilter { Name = "Certificate Files", Extensions = new List<string> { "pfx" } },
-                    new FileDialogFilter { Name = "All Files", Extensions = new List<string> { "*" } }
-                };
-            }
-            
-            var result = await ofd.ShowAsync(this);
-            if (!string.IsNullOrEmpty(result)) safeFileName = Path.Combine(Path.GetDirectoryName(result), Path.GetFileNameWithoutExtension(result));
-            else return;
+
+            safeFileName = Path.Combine(resultDirectory, Path.GetFileNameWithoutExtension(result));
 
             if (args.saveCerAndKey)
             {
