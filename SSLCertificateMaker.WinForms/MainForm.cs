@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -253,7 +253,7 @@ namespace SSLCertificateMaker
 			{
 				SetStatus("Aborted");
 			}
-			catch (Exception ex)
+			catch (Exception ex) when (!(ex is OutOfMemoryException) && !(ex is StackOverflowException) && !(ex is AccessViolationException))
 			{
 				MessageBox.Show(ex.ToString());
 				SetStatus("An error occurred");

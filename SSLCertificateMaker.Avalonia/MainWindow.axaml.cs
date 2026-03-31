@@ -431,7 +431,7 @@ namespace SSLCertificateMaker.Avalonia
                         //await SetStatus(string.Empty);
                     }
                 }
-                catch (Exception)
+                catch (Exception ex) when (!(ex is OutOfMemoryException) && !(ex is StackOverflowException) && !(ex is AccessViolationException))
                 {
                     await SetStatus("An error occurred while generating the certificate.");
                 }
